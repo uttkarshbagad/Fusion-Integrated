@@ -9,6 +9,8 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 import core.api.schema  # noqa: F401  registers the auth schemes by import
 from core.api.health import healthz, readyz
+from core.api.router import router
+from core.api.elm_module import elm_module
 
 urlpatterns = [
     path("healthz", healthz, name="healthz"),
@@ -18,4 +20,5 @@ urlpatterns = [
     path("api/v1/placement/", include("modules.placement.api.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="docs"),
+    path("api/v1/elm", elm_module),  # Added route for elm_module
 ]
