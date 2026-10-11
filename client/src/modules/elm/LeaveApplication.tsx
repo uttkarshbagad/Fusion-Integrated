@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
+import { type FormEvent, useState } from "react";
 
-const LeaveApplication: React.FC = () => {
-  const [leaveType, setLeaveType] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [reason, setReason] = useState('');
+const LeaveApplication = () => {
+  const [leaveType, setLeaveType] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [reason, setReason] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     // Handle form submission logic here
-    console.log('Leave Type:', leaveType);
-    console.log('Start Date:', startDate);
-    console.log('End Date:', endDate);
-    console.log('Reason:', reason);
+    console.log("Leave Type:", leaveType);
+    console.log("Start Date:", startDate);
+    console.log("End Date:", endDate);
+    console.log("Reason:", reason);
   };
 
   return (

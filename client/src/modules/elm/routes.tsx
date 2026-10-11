@@ -1,15 +1,11 @@
-import React from 'react';
-import { Route, Routes } from 'react-router-dom';
-import LeaveBalance from './LeaveBalance';
-import LeaveApplication from './LeaveApplication';
+import { lazy } from "react";
+import { Navigate, type RouteObject } from "react-router-dom";
 
-const ELMRoutes = () => {
-  return (
-    <Routes>
-      <Route path="balance" element={<LeaveBalance />} />
-      <Route path="application" element={<LeaveApplication />} />
-    </Routes>
-  );
-};
+const LeaveBalance = lazy(() => import("./LeaveBalance"));
+const LeaveApplication = lazy(() => import("./LeaveApplication"));
 
-export default ELMRoutes;
+export const routes: RouteObject[] = [
+  { index: true, element: <Navigate to="balance" replace /> },
+  { path: "balance", element: <LeaveBalance /> },
+  { path: "application", element: <LeaveApplication /> },
+];

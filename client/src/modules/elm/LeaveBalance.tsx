@@ -1,6 +1,4 @@
-import React from 'react';
-
-const LeaveBalance: React.FC = () => {
+const LeaveBalance = () => {
   return (
     <div>
       <h1>Leave Balance</h1>

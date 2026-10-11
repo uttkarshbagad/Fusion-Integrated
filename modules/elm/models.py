@@ -1,31 +1,34 @@
-from django.contrib.auth.models import User
 from django.db import models
 
 
 class LeaveType(models.Model):
-    type = models.CharField(
-        max_length=3,
-        choices=[
-            ("CL", "Casual Leave"),
-            ("RH", "Recreational Holiday"),
-            ("SCL", "Special Casual Leave"),
-            ("EL", "Earned Leave"),
-            ("VL", "Vacation Leave"),
-            ("COL", "Compensatory Off Leave"),
-        ],
-    )
+    LEAVE_TYPE_CHOICES = [
+        ("CL", "Casual Leave"),
+        ("RH", "Recreational Holiday"),
+        ("SCL", "Special Casual Leave"),
+        ("EL", "Earned Leave"),
+        ("VL", "Vacation Leave"),
+        ("COL", "Compensatory Off Leave"),
+    ]
+    leave_type = models.CharField(max_length=3, choices=LEAVE_TYPE_CHOICES)
 
-    def __str__(self):
-        return self.type
+    class Meta:
+        db_table = "elm_leave_type"
+
+    def __str__(self) -> str:
+        return self.leave_type
 
 
 class LeaveBalance(models.Model):
-    employee = models.ForeignKey(User, on_delete=models.CASCADE)
+    employee_id = models.IntegerField(db_index=True)
     leave_type = models.ForeignKey(LeaveType, on_delete=models.CASCADE)
     balance = models.IntegerField()
 
-    def __str__(self):
-        return f"{self.employee.username} - {self.leave_type.type} Balance: {self.balance}"
+    class Meta:
+        db_table = "elm_leave_balance"
+
+    def __str__(self) -> str:
+        return f"Employee {self.employee_id} - {self.leave_type.leave_type} Balance: {self.balance}"
 
 
 class LeaveApplication(models.Model):
@@ -36,26 +39,32 @@ class LeaveApplication(models.Model):
         ("WITHDRAWN", "Withdrawn"),
         ("CANCELLED", "Cancelled"),
     ]
-    applicant = models.ForeignKey(User, on_delete=models.CASCADE)
+    applicant_id = models.IntegerField(db_index=True)
     leave_type = models.ForeignKey(LeaveType, on_delete=models.CASCADE)
     start_date = models.DateField()
     end_date = models.DateField()
-    station_leave_details = models.TextField()
+    station_leave_details = models.TextField(blank=True, default="")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="PENDING")
 
-    def __str__(self):
-        return f"{self.applicant.username} - {self.leave_type.type} Application"
+    class Meta:
+        db_table = "elm_leave_application"
+
+    def __str__(self) -> str:
+        return f"Applicant {self.applicant_id} - {self.leave_type.leave_type} Application"
 
 
 class SubstituteNomination(models.Model):
     leave_application = models.ForeignKey(LeaveApplication, on_delete=models.CASCADE)
-    substitute = models.ForeignKey(User, on_delete=models.CASCADE)
+    substitute_id = models.IntegerField(db_index=True)
     start_date = models.DateField()
     end_date = models.DateField()
-    reason = models.TextField()
+    reason = models.TextField(blank=True, default="")
 
-    def __str__(self):
+    class Meta:
+        db_table = "elm_substitute_nomination"
+
+    def __str__(self) -> str:
         return (
-            f"{self.leave_application.applicant.username} - "
-            f"{self.leave_application.leave_type.type} Substitute Nomination"
+            f"Applicant {self.leave_application.applicant_id} - "
+            f"{self.leave_application.leave_type.leave_type} Substitute Nomination"
         )
