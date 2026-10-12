@@ -33,7 +33,8 @@ class LeaveBalance(models.Model):
 
 class LeaveApplication(models.Model):
     STATUS_CHOICES = [
-        ("PENDING", "Pending"),
+        ("AWAITING_SUBSTITUTE", "Awaiting Substitute Consent"),
+        ("AWAITING_APPROVAL", "Awaiting Approval"),
         ("APPROVED", "Approved"),
         ("REJECTED", "Rejected"),
         ("WITHDRAWN", "Withdrawn"),
@@ -44,7 +45,8 @@ class LeaveApplication(models.Model):
     start_date = models.DateField()
     end_date = models.DateField()
     station_leave_details = models.TextField(blank=True, default="")
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="PENDING")
+    reason = models.TextField(blank=True, default="")
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default="AWAITING_APPROVAL")
 
     class Meta:
         db_table = "elm_leave_application"
@@ -54,11 +56,18 @@ class LeaveApplication(models.Model):
 
 
 class SubstituteNomination(models.Model):
+    STATUS_CHOICES = [
+        ("PENDING", "Pending Consent"),
+        ("ACCEPTED", "Accepted"),
+        ("DECLINED", "Declined"),
+    ]
     leave_application = models.ForeignKey(LeaveApplication, on_delete=models.CASCADE)
     substitute_id = models.IntegerField(db_index=True)
     start_date = models.DateField()
     end_date = models.DateField()
     reason = models.TextField(blank=True, default="")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="PENDING")
+    decline_reason = models.TextField(blank=True, default="")
 
     class Meta:
         db_table = "elm_substitute_nomination"
