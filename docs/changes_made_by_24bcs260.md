@@ -1,6 +1,7 @@
-# Phase 2 — ELM Module Engineering & Improvement Log
+# Changes Made by 24BCS260 — ELM Phase 2 Engineering Log
 
-## 1. Environment & Configuration
+## 1. Student & Environment Configuration
+- **Student Roll No**: 24BCS260
 - **Repository**: `FusionIIIT/Fusion-Integrated`
 - **Fork**: `https://github.com/uttkarshbagad/Fusion-Integrated`
 - **Branch**: `elm-phase2`
