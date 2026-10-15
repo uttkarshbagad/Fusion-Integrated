@@ -58,3 +58,37 @@ Preserve all existing table names (Meta db_table) and integer ID conventions for
   - **Action**: Updated `max_length` to `30` on `LeaveApplication.status` and `20` on `SubstituteNomination.status`.
 
 - **Commit**: `e4afea2` — `feat(elm): update models with workflow statuses and reasons`
+
+---
+
+### Step 2 — Pure-Python Domain Business Rules & Transitions
+- **Target File**: `modules/elm/domain/policy.py`
+- **Objective**: Implement pure-Python domain business rules (`BR-EL-012`, `BR-EL-014`, balance validation, and workflow state transitions) with no Django or ORM dependencies.
+- **Prompt to Qwen2.5-Coder:7b**:
+```text
+@policy.py
+Update modules/elm/domain/policy.py with pure-Python business rules from the ELM Specification Bundle (no Django or ORM imports):
+
+1. Add `validate_substitute_eligibility(applicant_id: int, substitute_id: int) -> None`:
+   - Raise ValueError if applicant_id == substitute_id (BR-EL-014).
+
+2. Add `check_date_overlap(start_a: date, end_a: date, start_b: date, end_b: date) -> bool`:
+   - Return True if the two date intervals [start_a, end_a] and [start_b, end_b] overlap (BR-EL-012).
+
+3. Add `validate_balance_sufficiency(current_balance: float | int, requested_days: float | int) -> None`:
+   - Raise ValueError("Insufficient leave balance") if requested_days > current_balance.
+
+4. Add `is_valid_transition(current_status: str, target_status: str) -> bool`:
+   - Implement the allowed state transitions:
+     - AWAITING_SUBSTITUTE -> AWAITING_APPROVAL, WITHDRAWN
+     - AWAITING_APPROVAL -> APPROVED, REJECTED, WITHDRAWN
+     - APPROVED -> CANCELLED
+   - Return False for all other transitions.
+
+Keep all existing LeaveCode, LeaveEntitlement, LEAVE_ENTITLEMENTS, and requested_days functions intact.
+```
+
+- **Observations & Code Review**:
+  - The model correctly added `validate_substitute_eligibility`, `check_date_overlap`, `validate_balance_sufficiency`, and `is_valid_transition`.
+  - Zero Django or ORM dependencies were introduced, fully respecting Fusion ERP's strict architecture rule (`domain/` may not import Django, DRF or Celery).
+

@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from datetime import date
 from enum import Enum
+from typing import Union
 
 
 class LeaveCode(Enum):
@@ -66,3 +67,26 @@ def requested_days(start_date: date, end_date: date) -> int:
     if end_date < start_date:
         raise ValueError("End date cannot be earlier than start date.")
     return (end_date - start_date).days + 1
+
+
+def validate_substitute_eligibility(applicant_id: int, substitute_id: int) -> None:
+    if applicant_id == substitute_id:
+        raise ValueError("Applicant cannot be their own substitute.")
+
+
+def check_date_overlap(start_a: date, end_a: date, start_b: date, end_b: date) -> bool:
+    return start_a <= end_b and start_b <= end_a
+
+
+def validate_balance_sufficiency(current_balance: Union[float, int], requested_days: Union[float, int]) -> None:
+    if requested_days > current_balance:
+        raise ValueError("Insufficient leave balance")
+
+
+def is_valid_transition(current_status: str, target_status: str) -> bool:
+    allowed_transitions = {
+        "AWAITING_SUBSTITUTE": ["AWAITING_APPROVAL", "WITHDRAWN"],
+        "AWAITING_APPROVAL": ["APPROVED", "REJECTED", "WITHDRAWN"],
+        "APPROVED": ["CANCELLED"],
+    }
+    return target_status in allowed_transitions.get(current_status, [])
