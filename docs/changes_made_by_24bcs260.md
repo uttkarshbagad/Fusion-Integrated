@@ -91,4 +91,81 @@ Keep all existing LeaveCode, LeaveEntitlement, LEAVE_ENTITLEMENTS, and requested
 - **Observations & Code Review**:
   - The model correctly added `validate_substitute_eligibility`, `check_date_overlap`, `validate_balance_sufficiency`, and `is_valid_transition`.
   - Zero Django or ORM dependencies were introduced, fully respecting Fusion ERP's strict architecture rule (`domain/` may not import Django, DRF or Celery).
+- **Commit**: `9e9507e` — `feat(elm): add pure-Python domain business rules and transition validators`
+
+---
+
+### Step 3 — Service Layer Workflow & Business Rule Integration
+- **Target File**: `modules/elm/services/applications.py`
+- **Objective**: Integrate domain validations into the application service and implement full lifecycle workflows (leave submission with balance/overlap gates, substitute nomination with eligibility gates, substitute consent responses, supervisor reviews with balance deduction, and withdrawals).
+- **Initial Prompt & Failure (Hallucination & Context Pollution)**:
+  - *Prompt*: `@applications.py Update modules/elm/services/applications.py to integrate domain policy rules...`
+  - *Failure Mode*: Because another file named `applications.py` exists in `modules/placement/services/applications.py`, Continue's indexer pulled in the Placement module's file. Qwen generated code importing `JobPosting`, `PlacementPolicy`, and `RoundParticipation`, confusing student placement applications with employee leave applications!
+  - *Action*: Closed placement tabs and scoped the prompt strictly to `modules/elm/`.
+- **Refined Module-Scoped Prompt to Qwen2.5-Coder:7b**:
+```text
+Look strictly at `modules/elm/services/applications.py`, `modules/elm/models.py`, and `modules/elm/domain/policy.py`. Do NOT import anything from modules.placement.
+
+Update `modules/elm/services/applications.py` with this exact structure:
+
+from datetime import date
+from django.db import transaction
+from modules.elm.domain.policy import (
+    check_date_overlap,
+    is_valid_transition,
+    requested_days,
+    validate_balance_sufficiency,
+    validate_substitute_eligibility,
+)
+from modules.elm.models import (
+    LeaveApplication,
+    LeaveBalance,
+    LeaveType,
+    SubstituteNomination,
+)
+
+1. `submit_leave_application`:
+   - Arguments: applicant_id: int, leave_type: LeaveType, start_date: date, end_date: date, reason: str = "", station_leave_details: str = ""
+   - Calculate days = requested_days(start_date, end_date)
+   - Fetch applicant's LeaveBalance for leave_type; call validate_balance_sufficiency(balance_obj.balance, days)
+   - Query existing LeaveApplications for applicant with status in ["AWAITING_SUBSTITUTE", "AWAITING_APPROVAL", "APPROVED"]; for each, if check_date_overlap(app.start_date, app.end_date, start_date, end_date) is True, raise ValueError("Overlapping leave application exists.")
+   - Create LeaveApplication with status="AWAITING_APPROVAL", reason=reason.
+
+2. `nominate_substitute`:
+   - Arguments: leave_application: LeaveApplication, substitute_id: int, start_date: date, end_date: date, reason: str = ""
+   - Call validate_substitute_eligibility(leave_application.applicant_id, substitute_id)
+   - Create SubstituteNomination with status="PENDING"
+   - Update leave_application.status = "AWAITING_SUBSTITUTE", save.
+
+3. `respond_substitute_nomination`:
+   - Arguments: nomination: SubstituteNomination, accept: bool, decline_reason: str = ""
+   - If accept: nomination.status = "ACCEPTED", nomination.leave_application.status = "AWAITING_APPROVAL", save both.
+   - If not accept: nomination.status = "DECLINED", nomination.decline_reason = decline_reason, save.
+
+4. `review_leave_application`:
+   - Arguments: application: LeaveApplication, approve: bool
+   - If approve:
+     - Check is_valid_transition(application.status, "APPROVED")
+     - Fetch applicant's LeaveBalance with select_for_update(); deduct requested_days; save balance.
+     - application.status = "APPROVED", save.
+   - If reject:
+     - Check is_valid_transition(application.status, "REJECTED")
+     - application.status = "REJECTED", save.
+
+5. `withdraw_application`:
+   - Check is_valid_transition(application.status, "WITHDRAWN")
+   - application.status = "WITHDRAWN", save.
+
+6. Keep `get_employee_balances(employee_id: int)`.
+```
+
+- **Defects Caught During Human-in-the-Loop Review**:
+  1. *Explanation vs. Code Discrepancy*: In `nominate_substitute`, Qwen's explanation stated that it updated the leave application status to `AWAITING_SUBSTITUTE`, but it completely omitted those lines (`leave_application.status = "AWAITING_SUBSTITUTE"; leave_application.save()`) in the generated code block.
+  2. *Related Object Persistence Bug*: In `respond_substitute_nomination`, Qwen mutated `nomination.leave_application.status = "AWAITING_APPROVAL"` in memory, but only called `nomination.save()`. It forgot to call `save()` on `nomination.leave_application`, meaning the status would never be persisted in the database!
+  3. *Missing Null Safety*: In `submit_leave_application`, it accessed `balance_obj.balance` without checking if `balance_obj` is `None`, risking an unhandled `AttributeError`.
+- **Engineering Actions Applied**:
+  - Added explicit `leave_application.save(update_fields=["status"])` to both `nominate_substitute` and `respond_substitute_nomination`.
+  - Added defensive `None` check raising `ValueError` when an applicant lacks a balance record.
+  - Enforced atomic transactions and `select_for_update()` during supervisor review balance deductions to prevent race conditions.
+
 
