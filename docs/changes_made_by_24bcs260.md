@@ -21,9 +21,9 @@ Reviewing the inherited Phase-1 code against the **ELM Specification Bundle v1.4
 
 ---
 
-## 3. Step-by-Step Prompts & Engineering Log
+## 3. Commit-by-Commit Engineering Log
 
-### Step 1 — Models & Workflow Schema Alignment
+### Commit 1 (e4afea2) — Models & Workflow Schema Alignment
 - **Target File**: `modules/elm/models.py`
 - **Objective**: Align data models with workflow state lifecycles and persist leave reasons and substitute response statuses.
 - **Prompt to Qwen2.5-Coder:7b**:
@@ -61,7 +61,7 @@ Preserve all existing table names (Meta db_table) and integer ID conventions for
 
 ---
 
-### Step 2 — Pure-Python Domain Business Rules & Transitions
+### Commit 2 (9e9507e) — Pure-Python Domain Business Rules & Transitions
 - **Target File**: `modules/elm/domain/policy.py`
 - **Objective**: Implement pure-Python domain business rules (`BR-EL-012`, `BR-EL-014`, balance validation, and workflow state transitions) with no Django or ORM dependencies.
 - **Prompt to Qwen2.5-Coder:7b**:
@@ -95,7 +95,7 @@ Keep all existing LeaveCode, LeaveEntitlement, LEAVE_ENTITLEMENTS, and requested
 
 ---
 
-### Step 3 — Service Layer Workflow & Business Rule Integration
+### Commit 3 (ae43983) — Service Layer Workflow & Business Rule Integration
 - **Target File**: `modules/elm/services/applications.py`
 - **Objective**: Integrate domain validations into the application service and implement full lifecycle workflows (leave submission with balance/overlap gates, substitute nomination with eligibility gates, substitute consent responses, supervisor reviews with balance deduction, and withdrawals).
 - **Prompt to Qwen2.5-Coder:7b**:
@@ -167,7 +167,7 @@ from modules.elm.models import (
 
 ---
 
-### Step 4 — Database Schema Migration
+### Commit 4 (916bed9) — Database Schema Migration
 - **Target File**: `modules/elm/migrations/0002_add_workflow_and_reason_fields.py`
 - **Objective**: Create the Django schema migration reflecting the new fields (`reason`, `SubstituteNomination.status`, `decline_reason`) and updated `LeaveApplication.status` choices and length.
 - **Context Files Provided**: `modules/elm/models.py`, `modules/elm/migrations/0001_initial.py`
@@ -188,7 +188,7 @@ Write the Django schema migration `modules/elm/migrations/0002_add_workflow_and_
 
 ---
 
-### Step 5 — Domain Unit Test Suite
+### Commit 5 (937b9dc) — Domain Unit Test Suite
 - **Target File**: `modules/elm/tests/test_policy.py`
 - **Objective**: Establish the first automated unit test suite for ELM to test pure-Python domain business rules (`BR-EL-012`, `BR-EL-014`, balance validation, workflow state transitions, and requested days calculation).
 - **Context File Provided**: `modules/elm/domain/policy.py`
@@ -231,7 +231,7 @@ Write clean, idiomatic pytest functions without Django database fixtures (pure P
 
 ---
 
-### Step 6 — REST API Layer (Serializers, Views, and URL Routing)
+### Commit 6 (fa0e6a3) — REST API Layer (Serializers, Views, and URL Routing)
 - **Target Files**: `modules/elm/api/serializers.py`, `modules/elm/api/views.py`, `modules/elm/api/urls.py`
 - **Objective**: Wire HTTP endpoints and request/response serializers to the application service layer to support the complete leave application lifecycle (submission, substitute responses, supervisor review, and withdrawal).
 - **Context Files Provided**: `modules/elm/api/serializers.py`, `modules/elm/api/views.py`, `modules/elm/api/urls.py`, `modules/elm/services/applications.py`
@@ -264,7 +264,7 @@ Update modules/elm/api/views.py and modules/elm/api/urls.py:
 
 ---
 
-### Step 7 — Frontend Client Integration (React Components & API Client)
+### Commit 7 (4d1a882) — Frontend Client Integration (React Components & API Client)
 - **Target Files**: `client/src/modules/elm/api.ts`, `client/src/modules/elm/LeaveBalance.tsx`, `client/src/modules/elm/LeaveApplication.tsx`
 - **Objective**: Replace frontend placeholder stubs and mock console logs with live data fetching and form submission handling wired to the REST API.
 - **Context Files Provided**: `client/src/modules/elm/api.ts`, `client/src/modules/elm/LeaveBalance.tsx`, `client/src/modules/elm/LeaveApplication.tsx`
@@ -295,6 +295,7 @@ Look strictly at `client/src/modules/elm/api.ts`, `client/src/modules/elm/LeaveB
   - Imported `type LeaveBalanceRow` from `./api`.
   - Added `reason?: string` to `LeaveApplicationPayload` in `api.ts`.
   - Added form validation, loading states, and reset handling.
+- **Commit**: `4d1a882` — `feat(elm): wire LeaveBalance and LeaveApplication frontend to REST API`
 
 
 
