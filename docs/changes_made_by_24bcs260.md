@@ -163,5 +163,30 @@ from modules.elm.models import (
   - Added explicit `leave_application.save(update_fields=["status"])` to both `nominate_substitute` and `respond_substitute_nomination`.
   - Added defensive `None` check raising `ValueError` when an applicant lacks a balance record.
   - Enforced atomic transactions and `select_for_update()` during supervisor review balance deductions to prevent race conditions.
+- **Commit**: `ae43983` — `feat(elm): integrate domain rules and workflow actions into application service`
+
+---
+
+### Step 4 — Database Schema Migration
+- **Target File**: `modules/elm/migrations/0002_add_workflow_and_reason_fields.py`
+- **Objective**: Create the Django schema migration reflecting the new fields (`reason`, `SubstituteNomination.status`, `decline_reason`) and updated `LeaveApplication.status` choices and length.
+- **Context Files Provided**: `modules/elm/models.py`, `modules/elm/migrations/0001_initial.py`
+- **Prompt to Qwen2.5-Coder:7b**:
+```text
+Based on `modules/elm/models.py` and `modules/elm/migrations/0001_initial.py`:
+
+Write the Django schema migration `modules/elm/migrations/0002_add_workflow_and_reason_fields.py` to reflect the updated models:
+1. Set dependencies = [('elm', '0001_initial')].
+2. AddField `reason` (models.TextField, blank=True, default='') to `leaveapplication`.
+3. AlterField `status` on `leaveapplication` with max_length=30, default='AWAITING_APPROVAL', and the updated STATUS_CHOICES from models.py.
+4. AddField `status` on `substitutenomination` with max_length=20, default='PENDING', and STATUS_CHOICES from models.py.
+5. AddField `decline_reason` (models.TextField, blank=True, default='') to `substitutenomination`.
+```
+
+- **Defect Caught During Human-in-the-Loop Review**:
+  - *Wrong Migration Operation (`AlterField` vs `AddField`)*: For `substitutenomination.status`, Qwen mistakenly wrote `migrations.AlterField` instead of `migrations.AddField`. 
+  - *Root Cause & Impact*: In `0001_initial.py`, `SubstituteNomination` never had a `status` column. Running `AlterField` on a non-existent column causes PostgreSQL to crash with `ProgrammingError: column "status" does not exist`.
+  - *Engineering Action*: Corrected the operation on `substitutenomination.status` to `migrations.AddField`.
+
 
 
