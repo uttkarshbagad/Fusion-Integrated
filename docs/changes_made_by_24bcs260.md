@@ -183,10 +183,51 @@ Write the Django schema migration `modules/elm/migrations/0002_add_workflow_and_
 5. AddField `decline_reason` (models.TextField, blank=True, default='') to `substitutenomination`.
 ```
 
-- **Defect Caught During Human-in-the-Loop Review**:
-  - *Wrong Migration Operation (`AlterField` vs `AddField`)*: For `substitutenomination.status`, Qwen mistakenly wrote `migrations.AlterField` instead of `migrations.AddField`. 
-  - *Root Cause & Impact*: In `0001_initial.py`, `SubstituteNomination` never had a `status` column. Running `AlterField` on a non-existent column causes PostgreSQL to crash with `ProgrammingError: column "status" does not exist`.
-  - *Engineering Action*: Corrected the operation on `substitutenomination.status` to `migrations.AddField`.
+- **Engineering Action**: Corrected the operation on `substitutenomination.status` to `migrations.AddField`.
+- **Commit**: `916bed9` — `feat(elm): add schema migration for workflow statuses and reasons`
+
+---
+
+### Step 5 — Domain Unit Test Suite
+- **Target File**: `modules/elm/tests/test_policy.py`
+- **Objective**: Establish the first automated unit test suite for ELM to test pure-Python domain business rules (`BR-EL-012`, `BR-EL-014`, balance validation, workflow state transitions, and requested days calculation).
+- **Context File Provided**: `modules/elm/domain/policy.py`
+- **Prompt to Qwen2.5-Coder:7b**:
+```text
+Based on `modules/elm/domain/policy.py`:
+
+Write a comprehensive pytest unit test suite in `modules/elm/tests/test_policy.py` to test the pure-Python domain rules:
+
+1. Test `validate_substitute_eligibility`:
+   - Passes when applicant_id != substitute_id.
+   - Raises ValueError when applicant_id == substitute_id (BR-EL-014).
+
+2. Test `check_date_overlap` (BR-EL-012):
+   - Returns True for overlapping intervals (e.g., Oct 1-5 and Oct 4-8, or nested intervals).
+   - Returns False for disjoint/adjacent intervals (e.g., Oct 1-5 and Oct 6-10).
+
+3. Test `validate_balance_sufficiency`:
+   - Passes when balance >= requested days.
+   - Raises ValueError when requested days > balance.
+
+4. Test `is_valid_transition`:
+   - Returns True for allowed transitions (AWAITING_SUBSTITUTE -> AWAITING_APPROVAL/WITHDRAWN, AWAITING_APPROVAL -> APPROVED/REJECTED/WITHDRAWN, APPROVED -> CANCELLED).
+   - Returns False for illegal transitions (e.g. APPROVED -> REJECTED, REJECTED -> APPROVED, WITHDRAWN -> APPROVED).
+
+5. Test `requested_days`:
+   - Correct day count for valid ranges.
+   - Raises ValueError if end_date < start_date.
+
+Write clean, idiomatic pytest functions without Django database fixtures (pure Python unit tests).
+```
+
+- **Defects Caught During Human-in-the-Loop Review**:
+  1. *Missing Import*: The model called `date(2023, 10, 1)` throughout the tests but omitted `from datetime import date`. This would have caused `pytest` to immediately fail with `NameError: name 'date' is not defined`.
+  2. *Contradictory Overlap Assertion*: In `test_check_date_overlap`, line 18 asserted that `(Oct 1-5)` and `(Oct 6-10)` **do** overlap (`assert check_date_overlap(...)`), and then three lines later asserted that `(Oct 1-5)` and `(Oct 6-10)` **do not** overlap (`assert not check_date_overlap(...)`). Since the dates are disjoint, line 18 would fail `pytest`.
+- **Engineering Actions Applied**:
+  - Added `from datetime import date` to imports.
+  - Replaced the contradictory line with valid partial and nested/enclosed overlap test cases.
+
 
 
 
