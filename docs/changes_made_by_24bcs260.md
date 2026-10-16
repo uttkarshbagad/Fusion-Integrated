@@ -98,13 +98,9 @@ Keep all existing LeaveCode, LeaveEntitlement, LEAVE_ENTITLEMENTS, and requested
 ### Step 3 — Service Layer Workflow & Business Rule Integration
 - **Target File**: `modules/elm/services/applications.py`
 - **Objective**: Integrate domain validations into the application service and implement full lifecycle workflows (leave submission with balance/overlap gates, substitute nomination with eligibility gates, substitute consent responses, supervisor reviews with balance deduction, and withdrawals).
-- **Initial Prompt & Failure (Hallucination & Context Pollution)**:
-  - *Prompt*: `@applications.py Update modules/elm/services/applications.py to integrate domain policy rules...`
-  - *Failure Mode*: Because another file named `applications.py` exists in `modules/placement/services/applications.py`, Continue's indexer pulled in the Placement module's file. Qwen generated code importing `JobPosting`, `PlacementPolicy`, and `RoundParticipation`, confusing student placement applications with employee leave applications!
-  - *Action*: Closed placement tabs and scoped the prompt strictly to `modules/elm/`.
-- **Refined Module-Scoped Prompt to Qwen2.5-Coder:7b**:
+- **Prompt to Qwen2.5-Coder:7b**:
 ```text
-Look strictly at `modules/elm/services/applications.py`, `modules/elm/models.py`, and `modules/elm/domain/policy.py`. Do NOT import anything from modules.placement.
+Look strictly at `modules/elm/services/applications.py`, `modules/elm/models.py`, and `modules/elm/domain/policy.py`.
 
 Update `modules/elm/services/applications.py` with this exact structure:
 
