@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from modules.elm.models import LeaveApplication, LeaveBalance, LeaveType
+from modules.elm.models import LeaveApplication, LeaveBalance, LeaveType, SubstituteNomination
 
 
 class LeaveTypeSerializer(serializers.ModelSerializer):
@@ -25,5 +25,32 @@ class LeaveApplicationSerializer(serializers.ModelSerializer):
             "start_date",
             "end_date",
             "station_leave_details",
+            "reason",
             "status",
         ]
+        read_only_fields = ["status", "applicant_id"]
+
+
+class SubstituteNominationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubstituteNomination
+        fields = [
+            "id",
+            "leave_application",
+            "substitute_id",
+            "start_date",
+            "end_date",
+            "reason",
+            "status",
+            "decline_reason",
+        ]
+        read_only_fields = ["status"]
+
+
+class SubstituteResponseSerializer(serializers.Serializer):
+    accept = serializers.BooleanField()
+    decline_reason = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class ReviewApplicationSerializer(serializers.Serializer):
+    approve = serializers.BooleanField()

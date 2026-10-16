@@ -227,6 +227,40 @@ Write clean, idiomatic pytest functions without Django database fixtures (pure P
 - **Engineering Actions Applied**:
   - Added `from datetime import date` to imports.
   - Replaced the contradictory line with valid partial and nested/enclosed overlap test cases.
+- **Commit**: `937b9dc` — `test(elm): add automated pytest suite for domain policy business rules`
+
+---
+
+### Step 6 — REST API Layer (Serializers, Views, and URL Routing)
+- **Target Files**: `modules/elm/api/serializers.py`, `modules/elm/api/views.py`, `modules/elm/api/urls.py`
+- **Objective**: Wire HTTP endpoints and request/response serializers to the application service layer to support the complete leave application lifecycle (submission, substitute responses, supervisor review, and withdrawal).
+- **Context Files Provided**: `modules/elm/api/serializers.py`, `modules/elm/api/views.py`, `modules/elm/api/urls.py`, `modules/elm/services/applications.py`
+- **Prompts to Qwen2.5-Coder:7b**:
+```text
+Update modules/elm/api/serializers.py:
+1. In LeaveApplicationSerializer: include 'reason' and make 'status' and 'applicant_id' read-only.
+2. Add SubstituteNominationSerializer with 'status' read-only.
+3. Add SubstituteResponseSerializer with accept and decline_reason.
+4. Add ReviewApplicationSerializer with approve.
+
+Update modules/elm/api/views.py and modules/elm/api/urls.py:
+1. In LeaveApplicationListCreateView.post: call submit_leave_application, catch ValueError -> HTTP 400.
+2. Add SubstituteResponseView: call respond_substitute_nomination.
+3. Add LeaveApplicationReviewView: call review_leave_application.
+4. Add LeaveApplicationWithdrawView: call withdraw_application.
+```
+
+- **Defects Caught During Human-in-the-Loop Review**:
+  1. *Omission of Existing Endpoint*: Qwen accidentally omitted `LeaveBalanceListView` from `views.py` while keeping its route in `urls.py`, which would crash routing with an `AttributeError`.
+  2. *Missing Imports*: `HasPermission` and `SubstituteNominationSerializer` were referenced in the views without being imported, causing `NameError`.
+  3. *URL Signature Mismatch (`TypeError`)*: In `urls.py`, routes were defined with `<int:pk>`, but Qwen defined the view methods as `post(self, request)` without `pk`, which causes DRF to raise `TypeError: post() got an unexpected keyword argument 'pk'`.
+  4. *Passing Raw String ID instead of Model Instance*: The service functions expect model instances (`application: LeaveApplication`), but Qwen passed `request.data['id']` directly, causing `AttributeError: 'str' object has no attribute 'status'`.
+- **Engineering Actions Applied**:
+  - Preserved `LeaveBalanceListView` in `views.py`.
+  - Added all required imports (`get_object_or_404`, `HasPermission`, `SubstituteNominationSerializer`).
+  - Corrected method signatures to `post(self, request, pk: int)` and fetched model instances via `get_object_or_404`.
+  - Added OpenAPI `@extend_schema` annotations for schema compliance.
+
 
 
 
