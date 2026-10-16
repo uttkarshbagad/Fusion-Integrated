@@ -11,6 +11,7 @@ export interface LeaveApplicationPayload {
   leave_type: number;
   start_date: string;
   end_date: string;
+  reason?: string;
   station_leave_details?: string;
 }
 

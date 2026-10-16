@@ -260,6 +260,42 @@ Update modules/elm/api/views.py and modules/elm/api/urls.py:
   - Added all required imports (`get_object_or_404`, `HasPermission`, `SubstituteNominationSerializer`).
   - Corrected method signatures to `post(self, request, pk: int)` and fetched model instances via `get_object_or_404`.
   - Added OpenAPI `@extend_schema` annotations for schema compliance.
+- **Commit**: `fa0e6a3` — `feat(elm): wire complete REST API views, serializers, and routes`
+
+---
+
+### Step 7 — Frontend Client Integration (React Components & API Client)
+- **Target Files**: `client/src/modules/elm/api.ts`, `client/src/modules/elm/LeaveBalance.tsx`, `client/src/modules/elm/LeaveApplication.tsx`
+- **Objective**: Replace frontend placeholder stubs and mock console logs with live data fetching and form submission handling wired to the REST API.
+- **Context Files Provided**: `client/src/modules/elm/api.ts`, `client/src/modules/elm/LeaveBalance.tsx`, `client/src/modules/elm/LeaveApplication.tsx`
+- **Prompt to Qwen2.5-Coder:7b**:
+```text
+Look strictly at `client/src/modules/elm/api.ts`, `client/src/modules/elm/LeaveBalance.tsx`, and `client/src/modules/elm/LeaveApplication.tsx`.
+
+1. In `api.ts`:
+   - Add `reason?: string` to `LeaveApplicationPayload`.
+
+2. Update `LeaveBalance.tsx`:
+   - Use `useEffect` to fetch balances on mount using `fetchLeaveBalances()`.
+   - Render a loading state, error state, and a clean table/card list displaying the leave balances.
+
+3. Update `LeaveApplication.tsx`:
+   - Connect the form submission to `submitLeaveApplication(...)`.
+   - Show loading state while submitting.
+   - Show a success alert upon successful creation and reset the form.
+   - Catch errors and display the error message to the user.
+```
+
+- **Defects Caught During Human-in-the-Loop Review**:
+  1. *Hallucinated Dependency (`react-toastify`)*: Qwen added `import { toast } from "react-toastify"`. The Fusion project does not have `react-toastify` installed (Fusion uses Mantine UI), which would cause `npm run build` and `npm run typecheck` to fail with `Cannot find module 'react-toastify'`.
+  2. *Missing TypeScript Type Import*: In `LeaveBalance.tsx`, Qwen annotated state as `useState<LeaveBalanceRow[]>([])` without importing `LeaveBalanceRow`.
+  3. *Redundant Relative Path*: Imported from `"../../modules/elm/api"` when `api.ts` is in the same directory (`./api`).
+- **Engineering Actions Applied**:
+  - Replaced the uninstalled toast dependency with self-contained, clean notification banners.
+  - Imported `type LeaveBalanceRow` from `./api`.
+  - Added `reason?: string` to `LeaveApplicationPayload` in `api.ts`.
+  - Added form validation, loading states, and reset handling.
+
 
 
 
