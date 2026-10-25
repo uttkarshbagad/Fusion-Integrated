@@ -108,7 +108,11 @@ class LeaveApplicationWithdrawView(APIView):
 
     @extend_schema(responses=LeaveApplicationSerializer)
     def post(self, request, pk: int):
-        application = get_object_or_404(LeaveApplication, pk=pk)
+        application = get_object_or_404(
+            LeaveApplication,
+            pk=pk,
+            applicant_id=request.user.user_id,
+        )
         try:
             withdrawn = applications.withdraw_application(application=application)
             return Response(LeaveApplicationSerializer(withdrawn).data)
